@@ -193,9 +193,11 @@ static ucs_status_t uct_ib_mlx5_devx_reg_ksm(uct_ib_mlx5_md_t *md,
     UCT_IB_MLX5DV_SET64(mkc, mkc, len, length);
     UCT_IB_MLX5DV_SET(create_mkey_in, in, translations_octword_actual_size, list_size);
 
-    mr = mlx5dv_devx_obj_create(md->super.dev.ibv_context, in,
-                                uct_ib_mlx5_calc_mkey_inlen(list_size),
-                                out, sizeof(out));
+    mr = UCS_PROFILE_NAMED_CALL_ALWAYS("devx_create_mkey",
+                                       mlx5dv_devx_obj_create,
+                                       md->super.dev.ibv_context, in,
+                                       uct_ib_mlx5_calc_mkey_inlen(list_size),
+                                       out, sizeof(out));
     if (mr == NULL) {
         ucs_debug("mlx5dv_devx_obj_create(CREATE_MKEY, mode=KSM) failed, syndrome %x: %m",
                   UCT_IB_MLX5DV_GET(create_mkey_out, out, syndrome));
@@ -246,14 +248,14 @@ uct_ib_mlx5_devx_reg_ksm_data_contig(uct_ib_mlx5_md_t *md, uct_ib_mlx5_mr_t *mr,
                                      off_t off, struct mlx5dv_devx_obj **mr_p,
                                      uint32_t *mkey)
 {
-    intptr_t addr           = (intptr_t)mr->super.ib->addr &
-                              ~(UCT_IB_MD_MAX_MR_SIZE - 1);
+    intptr_t addr = (intptr_t)mr->super.ib->addr & ~(UCT_IB_MD_MAX_MR_SIZE - 1);
     /* FW requires indirect atomic MR addr and length to be aligned
      * to max supported atomic argument size */
-    size_t length           = ucs_align_up(mr->super.ib->length +
-                              (intptr_t)mr->super.ib->addr - addr,
-                              md->super.dev.atomic_align);
-    int list_size           = ucs_div_round_up(length, UCT_IB_MD_MAX_MR_SIZE);
+    size_t length = ucs_align_up(mr->super.ib->length +
+                                 (intptr_t)mr->super.ib->addr - addr,
+                                 md->super.dev.atomic_align);
+    /* add off to workaround CREATE_MKEY range check issue */
+    int list_size = ucs_div_round_up(length + off, UCT_IB_MD_MAX_MR_SIZE);
     int i;
     char *in;
     void *klm;
@@ -1169,7 +1171,7 @@ static ucs_status_t uct_ib_mlx5dv_check_dc(uct_ib_device_t *dev)
     dv_attr.dc_init_attr.dct_access_key = UCT_IB_KEY;
 
     /* create DCT qp successful means DC is supported */
-    qp = mlx5dv_create_qp(ctx, &qp_attr, &dv_attr);
+    qp = UCS_PROFILE_CALL_ALWAYS(mlx5dv_create_qp, ctx, &qp_attr, &dv_attr);
     if (qp == NULL) {
         ucs_debug("%s: mlx5dv_create_qp(DCT) failed: %m",
                   uct_ib_device_name(dev));
