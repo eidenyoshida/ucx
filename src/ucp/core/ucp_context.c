@@ -368,6 +368,11 @@ static ucs_config_field_t ucp_context_config_table[] = {
   {"PROTO_INFO", "n", "Enable printing protocols information.",
    ucs_offsetof(ucp_context_config_t, proto_info), UCS_CONFIG_TYPE_BOOL},
 
+  {"PROTO_INFO_DIR", "",
+   "If non-empty, protocol selection information files will be written to this\n"
+   "directory.",
+   ucs_offsetof(ucp_context_config_t, proto_info_dir), UCS_CONFIG_TYPE_STRING},
+
   {NULL}
 };
 
@@ -1345,8 +1350,6 @@ static ucs_status_t ucp_add_component_resources(ucp_context_h context,
             goto out;
         }
 
-        /* If the MD does not have transport resources (device or sockaddr),
-         * don't use it */
         if (num_tl_resources > 0) {
             /* List of memory type MDs */
             mem_type_bitmap = context->tl_mds[md_index].attr.cap.detect_mem_types;
@@ -1367,6 +1370,8 @@ static ucs_status_t ucp_add_component_resources(ucp_context_h context,
 
             ++context->num_mds;
         } else {
+            /* If the MD does not have transport resources (device or sockaddr),
+             * don't use it */
             ucs_debug("closing md %s because it has no selected transport resources",
                       context->tl_mds[md_index].rsc.md_name);
             uct_md_close(context->tl_mds[md_index].md);

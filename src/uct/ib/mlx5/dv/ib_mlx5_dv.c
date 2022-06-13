@@ -85,7 +85,7 @@ ucs_status_t uct_ib_mlx5_devx_create_qp(uct_ib_iface_t *iface,
 
     if (tx != NULL) {
         status = uct_ib_mlx5_md_buf_alloc(md, len, 0, &qp->devx.wq_buf,
-                                          &qp->devx.mem, "qp umem");
+                                          &qp->devx.mem, 0, "qp umem");
         if (status != UCS_OK) {
             goto err_uar;
         }
@@ -140,6 +140,7 @@ ucs_status_t uct_ib_mlx5_devx_create_qp(uct_ib_iface_t *iface,
     UCT_IB_MLX5DV_SET64(qpc, qpc, dbr_addr, qp->devx.dbrec->offset);
     UCT_IB_MLX5DV_SET(qpc, qpc, dbr_umem_id, qp->devx.dbrec->mem_id);
     UCT_IB_MLX5DV_SET(qpc, qpc, user_index, attr->uidx);
+    UCT_IB_MLX5DV_SET(qpc, qpc, ts_format, UCT_IB_MLX5_QPC_TS_FORMAT_DEFAULT);
 
     if (qp->devx.wq_buf == NULL) {
         UCT_IB_MLX5DV_SET(qpc, qpc, no_sq, true);
@@ -205,7 +206,7 @@ ucs_status_t uct_ib_mlx5_devx_create_qp(uct_ib_iface_t *iface,
     return UCS_OK;
 
 err_free:
-    mlx5dv_devx_obj_destroy(qp->devx.obj);
+    uct_ib_mlx5_devx_obj_destroy(qp->devx.obj, "QP");
 err_free_db:
     uct_ib_mlx5_put_dbrec(qp->devx.dbrec);
 err_free_mem:

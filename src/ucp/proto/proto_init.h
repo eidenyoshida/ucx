@@ -44,6 +44,9 @@ void ucp_proto_common_init_base_caps(
         const ucp_proto_common_init_params_t *params, size_t min_length);
 
 
+void ucp_proto_perf_range_add_data(const ucp_proto_perf_range_t *range);
+
+
 /*
  * Accepts a list of performance functions for a given range and appends the
  * convex or concave envelope of these functions to an output list.
@@ -85,7 +88,8 @@ ucp_proto_init_parallel_stages(const ucp_proto_init_params_t *params,
 
 ucs_status_t
 ucp_proto_common_init_caps(const ucp_proto_common_init_params_t *params,
-                           const ucp_proto_common_tl_perf_t *perf,
+                           const ucp_proto_common_tl_perf_t *tl_perf,
+                           ucp_proto_perf_node_t *const tl_perf_node,
                            ucp_md_map_t reg_md_map);
 
 #endif
